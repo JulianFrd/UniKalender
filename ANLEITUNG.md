@@ -38,6 +38,18 @@ Sag mir, dass du fertig bist. Ich suche dann die Datei unter `~/Library/CloudSto
 
 ---
 
+## Teil 1b: Räume (einmalige Anmeldung)
+
+Die Räume kommen aus der SharePoint-„Terminliste“ der Hochschule. Damit das Tool sie lesen darf:
+
+1. Im Projektordner **`UniKalender Login.command`** doppelklicken. Erscheint eine Sicherheitswarnung: Rechtsklick → **Öffnen**.
+2. Es öffnet sich ein Chrome-Fenster mit der Microsoft-Anmeldung. Melde dich mit deiner **Uni-Mail** an und wähle bei „Angemeldet bleiben?“ **Ja**.
+3. Das Fenster schließt sich von selbst, und im Terminal steht „✓ Anmeldung gespeichert“.
+
+Die Anmeldung hält meist mehrere Wochen bis Monate. Ist sie abgelaufen, bekommst du eine Mac-Benachrichtigung („Räume: Uni-Anmeldung abgelaufen“). Dann einfach Schritt 1–3 wiederholen. Der Kalender läuft in der Zwischenzeit normal weiter, nur ohne neue Räume.
+
+---
+
 ## Teil 2: Wann läuft der Abgleich?
 
 - **Mac um 8:00 offen:** Der Abgleich läuft um 8:00.

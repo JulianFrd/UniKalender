@@ -24,6 +24,13 @@ fi
 
 cp "$SRC/unikal.py" "$DEST/unikal.py"
 
+# Python-Umgebung mit Playwright (für den Raum-Abruf aus SharePoint, nutzt Google Chrome)
+if [[ ! -x "$DEST/venv/bin/python" ]]; then
+  echo "→ Richte Python-Umgebung ein …"
+  /opt/homebrew/bin/python3 -m venv "$DEST/venv"
+fi
+"$DEST/venv/bin/python" -c "import playwright" 2>/dev/null || "$DEST/venv/bin/pip" install -q playwright
+
 if [[ ! -f "$DEST/config.json" ]]; then
   cp "$SRC/config.example.json" "$DEST/config.json"
   echo "→ Konfiguration angelegt: $DEST/config.json"

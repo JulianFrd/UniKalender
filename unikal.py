@@ -411,6 +411,118 @@ def match_mail(mail, events, cohort):
     return [e["uid"] for e in hits], "ok"
 
 
+# --------------------------------------------------------------------------- Räume (SharePoint-Terminliste)
+#
+# Die Hochschule pflegt eine SharePoint-Liste mit allen Terminen inkl. Raum und Status.
+# Sie ist nur mit Uni-Login erreichbar. Externe Apps sperrt die Uni, deshalb nutzt das
+# Tool einen eigenen Chrome-Browser mit gespeicherter Anmeldung (einmalig: `login`).
+
+PROFILE_DIR = os.path.expanduser("~/Library/Application Support/UniKalender/browser-profile")
+
+
+class LoginRequired(Exception):
+    pass
+
+
+def _rooms_cfg(config):
+    r = config.get("rooms") or {}
+    return {
+        "enabled": r.get("enabled", False),
+        "site": r.get("site", "https://leibnizfh.sharepoint.com/sites/display"),
+        "list": r.get("list", "Terminliste"),
+    }
+
+
+ROOMS_JS = """async ([site, list]) => {
+  const h = {Accept: 'application/json;odata=nometadata'};
+  let url = site + "/_api/web/lists/GetByTitle('" + list + "')/items?$select=Title,Gruppe,Lehrende_x002f_Orga,Hinweis,Status,Raum,Datum,Zeit&$top=1000";
+  let all = [];
+  while (url) {
+    const r = await fetch(url, {headers: h});
+    if (!r.ok) return {error: r.status};
+    const j = await r.json();
+    all = all.concat(j.value);
+    url = j['odata.nextLink'] || j['@odata.nextLink'];
+  }
+  return {items: all};
+}"""
+
+
+def fetch_room_items(config, headless=True, wait_login=0):
+    """Lädt die Terminliste über einen Chrome mit gespeicherter Uni-Anmeldung."""
+    from playwright.sync_api import sync_playwright
+    rc = _rooms_cfg(config)
+    with sync_playwright() as p:
+        ctx = p.chromium.launch_persistent_context(PROFILE_DIR, channel="chrome", headless=headless)
+        try:
+            page = ctx.pages[0] if ctx.pages else ctx.new_page()
+            page.goto(rc["site"] + "/Lists/" + rc["list"] + "/AllItems.aspx", wait_until="domcontentloaded", timeout=60000)
+            deadline = dt.datetime.now() + dt.timedelta(seconds=wait_login)
+            while True:
+                try:
+                    page.wait_for_load_state("networkidle", timeout=15000)
+                except Exception:
+                    pass
+                if "sharepoint.com" in page.url and "login" not in page.url:
+                    res = page.evaluate(ROOMS_JS, [rc["site"], rc["list"]])
+                    if "items" in res:
+                        return res["items"]
+                if dt.datetime.now() >= deadline:
+                    raise LoginRequired(page.url)
+                page.wait_for_timeout(2000)
+        finally:
+            ctx.close()
+
+
+def _room_label(raw):
+    raw = (raw or "").strip()
+    if not raw or raw.lower() in ("tba", "tbd", "-", "n.n."):
+        return None
+    m = re.match(r"^R\s*(\S+)$", raw)
+    return "Raum " + m.group(1) if m else raw
+
+
+def _minutes(hm):
+    h, m = hm.split(":")
+    return int(h) * 60 + int(m)
+
+
+def match_rooms(events, items, wanted_groups):
+    """Ordnet jedem Excel-Termin den passenden Listeneintrag zu -> {uid: item}."""
+    mine = [i for i in items if set((i.get("Gruppe") or "").split("#")) & wanted_groups]
+    by_date = {}
+    for it in mine:
+        tm = TIME_RE.search(it.get("Zeit") or "")
+        if not tm or not it.get("Datum"):
+            continue
+        it["_s"], it["_e"] = _minutes(_hm(tm.group(1), tm.group(2))), _minutes(_hm(tm.group(3), tm.group(4)))
+        by_date.setdefault(it["Datum"][:10], []).append(it)
+    result = {}
+    for ev in events:
+        if ev["all_day"] or not ev["start"]:
+            continue
+        s, e = _minutes(ev["start"]), _minutes(ev["end"])
+        cands = [it for it in by_date.get(ev["date"], []) if it["_s"] < e and s < it["_e"]]
+        best, best_score = None, 0
+        for it in cands:
+            title = (it.get("Title") or "").strip()
+            lect = (it.get("Lehrende_x002f_Orga") or "").lower()
+            score = 0
+            if ev["lecturer"] and lect.startswith(ev["lecturer"].lower().rstrip(".").split("-")[0]):
+                score += 2
+            if title and title in (ev["course"], ev["abbr"]):
+                score += 2
+            if ev["kind"] == "exam" and title.lower().startswith("prüfung"):
+                score += 1
+            if it["_s"] == s:
+                score += 1
+            if score > best_score:
+                best, best_score = it, score
+        if best is not None and best_score >= 2:
+            result[ev["uid"]] = best
+    return result
+
+
 # --------------------------------------------------------------------------- Plan erzeugen
 
 def fmt_ev(ev):
@@ -474,10 +586,47 @@ def plan(config, mails, state):
     state["last_events"] = events
     state["stand"] = stand
 
+    # --- Räume aus der SharePoint-Terminliste
+    rooms = state.setdefault("rooms", {})            # uid -> {"room", "status", "hint"}
+    rc = _rooms_cfg(config)
+    if rc["enabled"]:
+        items = None
+        try:
+            items = fetch_room_items(config)
+            state["room_items_fetched"] = dt.datetime.now().isoformat(timespec="minutes")
+        except LoginRequired:
+            notes.append("Räume: Uni-Anmeldung abgelaufen – bitte „UniKalender Login.command“ doppelklicken.")
+        except Exception as exc:  # Netzwerk, Chrome fehlt, …
+            notes.append("Räume konnten nicht geladen werden (%s) – nutze letzten Stand." % type(exc).__name__)
+        if items is not None:
+            yy = str(config.get("jahrgang", "2025"))[2:]
+            wanted = {"dWI%s-A%s" % (yy, cohort["cohort"]), "dWI%s-%s" % (yy, group)}
+            today = dt.date.today().isoformat()
+            tomorrow = (dt.date.today() + dt.timedelta(days=1)).isoformat()
+            matched = match_rooms(events, items, wanted)
+            for ev in events:
+                it = matched.get(ev["uid"])
+                if it is None:
+                    continue
+                new = {"room": _room_label(it.get("Raum")),
+                       "status": (it.get("Status") or "").strip(),
+                       "hint": (it.get("Hinweis") or "").strip()}
+                old = rooms.get(ev["uid"], {})
+                if new["room"] and new["room"] != old.get("room") and today <= ev["date"] <= tomorrow:
+                    notes.append("Raum: %s → %s" % (fmt_ev(ev), new["room"]))
+                if new["status"].lower() == "storniert" and old.get("status", "").lower() != "storniert" \
+                        and ev["date"] >= today and not ev["cancelled_excel"]:
+                    notes.append("Terminliste: storniert – " + fmt_ev(ev))
+                if not new["room"] and old.get("room"):
+                    new["room"] = old["room"]           # bekannten Raum nicht durch "tba" überschreiben
+                rooms[ev["uid"]] = new
+
     # --- Kalendertermine bauen
     out = []
     for ev in events:
-        cancelled = ev["cancelled_excel"] or ev["uid"] in mail_cancel
+        rinfo = rooms.get(ev["uid"], {})
+        list_cancel = rinfo.get("status", "").lower() == "storniert"
+        cancelled = ev["cancelled_excel"] or ev["uid"] in mail_cancel or list_cancel
         title = ev["title"]
         if cancelled:
             title = "❌ ENTFÄLLT: " + title
@@ -496,7 +645,16 @@ def plan(config, mails, state):
             info.append("Im Stundenplan durchgestrichen")
         if ev["uid"] in mail_cancel:
             info.append("Ausfall per Mail: " + mail_cancel[ev["uid"]]["subject"])
+        if list_cancel:
+            info.append("In der Terminliste storniert")
+        if rinfo.get("hint"):
+            info.append("Hinweis: " + rinfo["hint"])
+        room = rinfo.get("room")
+        if rc["enabled"] and not ev["all_day"] and not room and not ev["online"] \
+                and ev["date"] >= dt.date.today().isoformat():
+            info.append("Raum: noch nicht festgelegt (tba)")
         info.append("Stundenplan-Stand: " + (stand or "?"))
+        location = room or ("Online" if ev["online"] else "")
         out.append({
             "uid": ev["uid"],
             "title": title,
@@ -504,7 +662,7 @@ def plan(config, mails, state):
             "start": ev["start"],
             "end": ev["end"],
             "allDay": ev["all_day"],
-            "location": "Online" if ev["online"] else "",
+            "location": location,
             "notes": "\n".join(info),
             "cancelled": cancelled,
         })
@@ -523,7 +681,30 @@ def main():
     p2.add_argument("--mails", required=True)
     p2.add_argument("--state", required=True)
     p2.add_argument("--dry-run", action="store_true", help="state nicht speichern")
+    p3 = sub.add_parser("login", help="Chrome-Fenster öffnen und einmalig mit der Uni-Mail anmelden (für die Räume)")
+    p3.add_argument("--config", required=True)
+    p4 = sub.add_parser("rooms", help="Räume abrufen und Zuordnung anzeigen (zum Testen)")
+    p4.add_argument("--config", required=True)
     a = ap.parse_args()
+
+    if a.cmd in ("login", "rooms"):
+        with open(a.config, encoding="utf-8") as f:
+            config = json.load(f)
+        if a.cmd == "login":
+            print("Ein Chrome-Fenster öffnet sich. Bitte mit der Uni-Mail anmelden (\"Angemeldet bleiben\": Ja).")
+            items = fetch_room_items(config, headless=False, wait_login=600)
+            print("✓ Anmeldung gespeichert – %d Einträge in der Terminliste gefunden. Das Fenster schließt sich jetzt." % len(items))
+            return
+        group = config.get("group", "A1/2")
+        yy = str(config.get("jahrgang", "2025"))[2:]
+        wanted = {"dWI%s-A%s" % (yy, group[1]), "dWI%s-%s" % (yy, group)}
+        events, _, _ = parse_schedule(os.path.expanduser(config["xlsxPath"]), group)
+        matched = match_rooms(events, fetch_room_items(config), wanted)
+        for ev in events:
+            if ev["date"] >= dt.date.today().isoformat():
+                it = matched.get(ev["uid"])
+                print("%-60s %s" % (fmt_ev(ev), "%s [%s]" % (it.get("Raum"), it.get("Status")) if it else "—"))
+        return
 
     if a.cmd == "parse":
         events, stand, _ = parse_schedule(a.xlsx, a.group)

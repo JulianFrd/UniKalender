@@ -132,7 +132,7 @@ func fetchMails(days: Int, senderFilter: String) -> [[String: String]] {
 // MARK: - Python-Teil
 
 func runPlan(config: Config, dryRun: Bool) -> Plan {
-    let py = config.python ?? "/opt/homebrew/bin/python3"
+    let py = ((config.python ?? "/opt/homebrew/bin/python3") as NSString).expandingTildeInPath
     let p = Process()
     p.executableURL = URL(fileURLWithPath: py)
     var args = ["-I", scriptURL.path, "plan", "--config", configURL.path,

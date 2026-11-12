@@ -3,8 +3,13 @@
   "group": "A1/2",
   "jahrgang": 2025,
   "calendarName": "Uni",
-  "python": "/opt/homebrew/bin/python3",
+  "python": "~/Library/Application Support/UniKalender/venv/bin/python",
   "mailDays": 3,
   "mailSenderFilter": "leibniz-fh.de",
-  "notify": true
+  "notify": true,
+  "rooms": {
+    "enabled": true,
+    "site": "https://leibnizfh.sharepoint.com/sites/display",
+    "list": "Terminliste"
+  }
 }
