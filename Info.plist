@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>CFBundleIdentifier</key>
+	<string>local.unikalender</string>
+	<key>CFBundleName</key>
+	<string>UniKalender</string>
+	<key>NSCalendarsFullAccessUsageDescription</key>
+	<string>UniKalender trägt deinen Stundenplan in den Kalender „Uni“ ein und hält ihn aktuell.</string>
+	<key>NSCalendarsUsageDescription</key>
+	<string>UniKalender trägt deinen Stundenplan in den Kalender „Uni“ ein und hält ihn aktuell.</string>
+	<key>NSAppleEventsUsageDescription</key>
+	<string>UniKalender liest Uni-Mails in Apple Mail, um Ausfälle zu erkennen.</string>
+</dict>
+</plist>

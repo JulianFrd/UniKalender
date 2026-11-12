@@ -1,0 +1,12 @@
+# Persönliche Daten nie hochladen
+*.xlsx
+*.xls
+config.json
+state.json
+mails.json
+*.log
+*.conf
+# Build / System
+unikal
+.DS_Store
+__pycache__/

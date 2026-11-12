@@ -1,0 +1,10 @@
+{
+  "xlsxPath": "~/Library/CloudStorage/OneDrive-LeibnizFH/<Ordner>/Stundenpläne 3. Semester dWI2025 A1.xlsx",
+  "group": "A1/2",
+  "jahrgang": 2025,
+  "calendarName": "Uni",
+  "python": "/opt/homebrew/bin/python3",
+  "mailDays": 3,
+  "mailSenderFilter": "leibniz-fh.de",
+  "notify": true
+}
