@@ -4,6 +4,85 @@ Bringt den Excel-Stundenplan der **Leibniz-FH** (Wirtschaftsinformatik, dWI) aut
 
 Der Stundenplan wird von der Hochschule als Excel-Datei in OneDrive gepflegt und ändert sich laufend. Ausfälle kommen zusätzlich oft morgens per Mail. UniKalender gleicht beides jeden Morgen automatisch mit einem eigenen Kalender ab. So zeigt das iPhone immer den aktuellen Stand.
 
+---
+
+## 📲 Für Kommilitonen: Stundenplan abonnieren, ohne etwas zu installieren
+
+Du willst nur den Stundenplan in deinem Kalender haben? Dann musst du das Tool nicht installieren. Abonniere einfach den fertigen Kalender. Er wird automatisch aktualisiert, sobald sich der Plan ändert oder ein Ausfall per Mail kommt.
+
+> **Inhalt:** Stundenplan **dWI2025, Kohorte A1, Übungsgruppe A1/2**, 3. Semester (WiSe 2026/27).
+> Für A1/1 stimmen alle Termine außer *Anwendungen C#* (dort steht Hoffmann statt Arnold). Für A2 passt der Kalender **nicht**.
+
+**Abo-Link:**
+
+```
+webcal://p68-caldav.icloud.com/published/2/MTY0MTE3Nzc3NTMxNjQxMZZCOWpAwH43zq2E9-JUoMBNwUgnCkX-6MM-gOkAqJ7LyqGehNRzBCD9pB25BQuUOIiUtwQt-rd8ufx1lr0ZBKY
+```
+
+<img src="docs/abo-qr.png" alt="QR-Code zum Kalender-Abo" width="200" align="right">
+
+### Am schnellsten: QR-Code scannen (iPhone)
+1. Öffne diese Seite am Laptop und richte die **Kamera-App** deines iPhones auf den QR-Code rechts.
+2. Tippe auf den gelben Hinweis, der erscheint.
+3. Tippe auf **„Abonnieren“** und dann auf **„Fertig“** bzw. **„Hinzufügen“**.
+
+Fertig. Der Kalender erscheint in der Kalender-App.
+
+### iPhone / iPad: Link manuell eintragen
+Falls der QR-Code nicht klappt oder du die Seite auf dem iPhone selbst geöffnet hast:
+
+1. Kopiere den **Abo-Link** oben. Auf dem iPhone den grauen Kasten lange drücken → „Kopieren“, oder auf das Kopier-Symbol tippen.
+2. Öffne die **Einstellungen**.
+3. Scrolle nach unten zu **Apps** → **Kalender** → **Kalenderaccounts**.
+   *Bei älteren iOS-Versionen (vor iOS 18): Einstellungen → **Kalender** → **Accounts**.*
+4. Tippe auf **„Account hinzufügen“** → **„Andere“** → **„Kalenderabo hinzufügen“**.
+5. Füge den Link in das Feld **„Server“** ein und tippe auf **„Weiter“**.
+6. Optional: Bei **„Beschreibung“** einen Namen wählen, z. B. `Uni Stundenplan`.
+7. Lass **„Erinnerungen entfernen“** eingeschaltet, sonst klingelt dein iPhone vor jeder Vorlesung. Tippe dann auf **„Sichern“**.
+
+### Mac: in der Kalender-App
+1. Kopiere den **Abo-Link** oben.
+2. Öffne die App **Kalender**.
+3. Wähle in der Menüleiste **Ablage → Neues Kalenderabonnement …**
+4. Füge den Link ein und klicke auf **„Abonnieren“**.
+5. Im folgenden Fenster:
+   - **Name:** z. B. `Uni Stundenplan`
+   - **Ort:** **iCloud** wählen. Dann erscheint der Kalender automatisch auch auf deinem iPhone und iPad, und du musst ihn dort nicht nochmal hinzufügen.
+   - **Automatisch aktualisieren:** **„Alle 15 Minuten“** oder **„Jede Stunde“**
+   - Haken bei **„Hinweise entfernen“** und **„Anhänge entfernen“** setzen.
+6. Auf **„OK“** klicken.
+
+### Damit Änderungen schnell ankommen
+- **iPhone:** Einstellungen → Apps → Kalender → Kalenderaccounts → **Datenabgleich** → **„Abrufen“** auf **„Alle 15 Minuten“** stellen. Bei „Manuell“ aktualisiert sich das Abo nur selten.
+- **Sofort aktualisieren:** In der Kalender-App unten auf **„Kalender“** tippen und die Liste **nach unten ziehen**.
+
+### Was du im Kalender siehst
+| Eintrag | Bedeutung |
+|---|---|
+| `WuD – Christmann` | Vorlesung (Kurs-Kürzel – Dozent/in). Den vollen Kursnamen findest du in der Notiz des Termins. |
+| Ort **„Online“** | Online-Veranstaltung |
+| `❌ ENTFÄLLT: …` | fällt aus (laut Plan oder Uni-Mail) |
+| `🎓 Prüfung …` | Klausur |
+
+### Abo wieder entfernen
+- **iPhone:** Einstellungen → Apps → Kalender → Kalenderaccounts → **Abonnierte Kalender** → Kalender antippen → **„Account löschen“**.
+- **Mac:** In der Kalender-App in der Seitenleiste mit Rechtsklick auf den Kalender → **„Abo kündigen“**.
+
+<details>
+<summary><b>Android / Google Kalender</b></summary>
+
+1. Öffne am **Computer** [calendar.google.com](https://calendar.google.com). In der Handy-App geht das nicht.
+2. Klicke links neben **„Weitere Kalender“** auf **+** und dann auf **„Per URL“**.
+3. Füge den Abo-Link ein und ersetze am Anfang `webcal://` durch `https://`.
+4. Klicke auf **„Kalender hinzufügen“**. Nach kurzer Zeit erscheint er auch in der Google-Kalender-App.
+
+⚠️ Google aktualisiert abonnierte Kalender nur etwa alle 12–24 Stunden. Kurzfristige Ausfälle am selben Morgen kommen dort eventuell zu spät an.
+</details>
+
+> ℹ️ Der Kalender wird von einem privaten Projekt gepflegt und aktualisiert sich, sobald der Mac des Betreibers morgens läuft. Verbindlich ist immer der offizielle Stundenplan der Hochschule.
+
+---
+
 ## Was das Tool kann
 
 - **Liest den Excel-Stundenplan** direkt aus der von OneDrive synchronisierten Datei. Es braucht keine zusätzliche Python-Bibliothek, nur die Standardbibliothek.
@@ -70,9 +149,9 @@ launchctl kickstart gui/$(id -u)/local.unikalender
 
 Die ausführliche Schritt-für-Schritt-Anleitung (OneDrive-Verknüpfung, Bedienung, Deinstallation) steht in **[ANLEITUNG.md](ANLEITUNG.md)**.
 
-## Kalender mit anderen teilen
+## Eigenen Kalender mit anderen teilen
 
-Den iCloud-Kalender „Uni“ kannst du auf dem iPhone unter Kalender → ⓘ → **Öffentlicher Kalender** freigeben. Den Link können Kommilitonen auf iPhone, Android oder in Google Kalender abonnieren. Sie bekommen alle Updates automatisch, ohne selbst etwas zu installieren.
+Wenn du das Tool selbst betreibst, kannst du deinen iCloud-Kalender „Uni“ auf dem iPhone unter Kalender → ⓘ → **Öffentlicher Kalender** freigeben. Den Link können andere so abonnieren, wie es [oben](#-für-kommilitonen-stundenplan-abonnieren-ohne-etwas-zu-installieren) beschrieben ist.
 
 ## Grenzen
 
